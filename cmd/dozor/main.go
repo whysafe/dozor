@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -119,9 +120,15 @@ func runServe(ctx context.Context, args []string) error {
 		return err
 	}
 
+	// Bind before the first check, so a monitor pointed at dozor itself
+	// (or at a proxy in front of it) never sees a refused connection on startup.
+	ln, err := net.Listen("tcp", *addr)
+	if err != nil {
+		return err
+	}
 	go engine.Run(ctx)
-	log.Info("dozor started", "addr", *addr, "monitors", len(cfg.Monitors), "version", version)
-	return listen(ctx, *addr, srv.Handler())
+	log.Info("dozor started", "addr", ln.Addr().String(), "monitors", len(cfg.Monitors), "version", version)
+	return serve(ctx, ln, srv.Handler())
 }
 
 func buildNotifier(cfg *config.Config) (monitor.Notifier, error) {
@@ -142,10 +149,10 @@ func buildNotifier(cfg *config.Config) (monitor.Notifier, error) {
 	return list, nil
 }
 
-func listen(ctx context.Context, addr string, h http.Handler) error {
-	server := &http.Server{Addr: addr, Handler: h, ReadHeaderTimeout: 5 * time.Second}
+func serve(ctx context.Context, ln net.Listener, h http.Handler) error {
+	server := &http.Server{Handler: h, ReadHeaderTimeout: 5 * time.Second}
 	errCh := make(chan error, 1)
-	go func() { errCh <- server.ListenAndServe() }()
+	go func() { errCh <- server.Serve(ln) }()
 
 	select {
 	case err := <-errCh:
@@ -251,6 +258,10 @@ func runDemo(ctx context.Context, args []string) error {
 		}
 		return os.WriteFile(*render, buf.Bytes(), 0o644)
 	}
-	fmt.Fprintf(os.Stderr, "демо-страница: http://localhost%s\n", *addr)
-	return listen(ctx, *addr, srv.Handler())
+	ln, err := net.Listen("tcp", *addr)
+	if err != nil {
+		return err
+	}
+	fmt.Fprintf(os.Stderr, "демо-страница: http://%s\n", ln.Addr())
+	return serve(ctx, ln, srv.Handler())
 }
