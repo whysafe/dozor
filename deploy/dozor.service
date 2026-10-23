@@ -1,0 +1,23 @@
+[Unit]
+Description=dozor uptime monitor
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=dozor
+Group=dozor
+WorkingDirectory=/var/lib/dozor
+EnvironmentFile=-/etc/dozor/env
+ExecStart=/usr/local/bin/dozor serve -config /etc/dozor/dozor.yaml -db /var/lib/dozor/dozor.db -addr 127.0.0.1:8080
+Restart=on-failure
+RestartSec=5
+
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+ReadWritePaths=/var/lib/dozor
+
+[Install]
+WantedBy=multi-user.target

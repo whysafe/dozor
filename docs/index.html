@@ -1,0 +1,668 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>Статус сервисов «Северного ветра» · Частичный сбой</title>
+<meta name="description" content="Доступность сервисов за 90 дней и история инцидентов.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%231f1d1a'/%3E%3Ccircle cx='16' cy='16' r='6' fill='%23e8c547'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>:root {
+  --paper: #f4f0e8;
+  --card: #fbf9f4;
+  --ink: #1f1d1a;
+  --muted: #6b6458;
+  --line: #ddd5c6;
+  --up: #2e7d4f;
+  --minor: #8aa63a;
+  --warn: #c4880f;
+  --down: #c0392b;
+  --none: #e3dccf;
+  --signal: #e8c547;
+  --display: "Unbounded", "Arial Black", sans-serif;
+  --sans: "IBM Plex Sans", "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #15140f;
+    --card: #1e1c17;
+    --ink: #eee8dc;
+    --muted: #a39a8a;
+    --line: #34302a;
+    --up: #4fb37a;
+    --minor: #a4c159;
+    --warn: #e0a737;
+    --down: #e2604f;
+    --none: #2d2a24;
+  }
+}
+
+* { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background:
+    radial-gradient(circle at 1px 1px, color-mix(in srgb, var(--ink) 9%, transparent) 1px, transparent 0) 0 0 / 22px 22px,
+    var(--paper);
+  color: var(--ink);
+  font: 16px/1.5 var(--sans);
+}
+
+.wrap {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 40px 20px 32px;
+}
+
+h1, h2, h3, h4, p { margin: 0; }
+
+.muted { color: var(--muted); }
+
+/* header */
+.top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 16px;
+  padding-bottom: 22px;
+  border-bottom: 2px solid var(--ink);
+}
+
+.brand { display: flex; align-items: center; gap: 14px; min-width: 0; }
+
+.eye {
+  flex: none;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: var(--ink);
+  display: grid;
+  place-items: center;
+}
+
+.eye span {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--signal);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--signal) 25%, transparent);
+  animation: look 6s ease-in-out infinite;
+}
+
+@keyframes look {
+  0%, 40%, 100% { transform: translateX(0); }
+  50%, 60% { transform: translateX(-6px); }
+  70%, 80% { transform: translateX(6px); }
+}
+
+.kicker {
+  font: 500 12px/1 var(--mono);
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+h1 {
+  font: 700 clamp(22px, 4.4vw, 34px)/1.1 var(--display);
+  letter-spacing: -.01em;
+  overflow-wrap: anywhere;
+}
+
+.stamp {
+  text-align: right;
+  font: 12px/1.4 var(--mono);
+  color: var(--muted);
+  flex: none;
+}
+
+.stamp b { color: var(--ink); font-weight: 500; }
+
+/* overall banner */
+/* Banner colours are fixed in both themes so white text keeps its contrast. */
+.banner {
+  --c: #2a6e46;
+  margin: 28px 0 36px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 22px 24px;
+  background: var(--c);
+  color: #fff;
+  border-radius: 4px;
+  box-shadow: 6px 6px 0 var(--ink);
+}
+
+.banner--degraded { --c: #95650a; }
+.banner--down { --c: #ad3326; }
+.banner--unknown { --c: #5b554b; }
+
+.banner h2 { font: 700 clamp(18px, 3.2vw, 24px)/1.2 var(--display); }
+.banner p { opacity: .9; margin-top: 4px; }
+
+.pulse {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  animation: pulse 2s ease-out infinite;
+}
+
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 rgb(255 255 255 / .7); }
+  100% { box-shadow: 0 0 0 16px rgb(255 255 255 / 0); }
+}
+
+/* groups and monitors */
+.group, .incidents { margin-bottom: 36px; }
+
+.group__title {
+  font: 500 13px/1 var(--mono);
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.group__title::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+
+.mon {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--up);
+  border-radius: 4px;
+  padding: 18px 20px 16px;
+  margin-bottom: 12px;
+}
+
+.mon--degraded { border-left-color: var(--warn); }
+.mon--down { border-left-color: var(--down); }
+.mon--unknown { border-left-color: var(--none); }
+
+.mon__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.mon__name { min-width: 0; }
+
+.mon__name h4 { font-size: 18px; font-weight: 600; line-height: 1.3; }
+
+.mon__name code {
+  display: block;
+  font: 13px/1.4 var(--mono);
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.pill {
+  --c: var(--up);
+  flex: none;
+  font: 500 13px/1 var(--mono);
+  padding: 7px 10px 7px 24px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--c) 45%, transparent);
+  background: color-mix(in srgb, var(--c) 12%, transparent);
+  color: var(--ink);
+  position: relative;
+  white-space: nowrap;
+}
+
+.pill::before {
+  content: "";
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  margin-top: -4px;
+  border-radius: 50%;
+  background: var(--c);
+}
+
+.pill--degraded { --c: var(--warn); }
+.pill--down { --c: var(--down); }
+.pill--unknown { --c: var(--muted); }
+
+.mon__msg {
+  margin-top: 10px;
+  font: 13px/1.45 var(--mono);
+  color: var(--ink);
+  background: color-mix(in srgb, var(--warn) 12%, transparent);
+  border-radius: 3px;
+  padding: 6px 10px;
+  overflow-wrap: anywhere;
+}
+
+.mon--down .mon__msg { background: color-mix(in srgb, var(--down) 12%, transparent); }
+
+/* 90-day history */
+.bars {
+  display: flex;
+  gap: 2px;
+  height: 34px;
+  margin-top: 16px;
+}
+
+.bar {
+  flex: 1;
+  min-width: 0;
+  border-radius: 2px;
+  background: var(--up);
+  transition: transform .12s;
+  transform-origin: bottom;
+}
+
+.bar:hover { transform: scaleY(1.18); }
+
+.bar--minor { background: var(--minor); }
+.bar--warn { background: var(--warn); }
+.bar--bad { background: var(--down); }
+.bar--none { background: var(--none); }
+
+.bars__legend {
+  display: flex;
+  justify-content: space-between;
+  font: 12px/1 var(--mono);
+  color: var(--muted);
+  margin-top: 8px;
+}
+
+.from30 { display: none; }
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, auto) 1fr;
+  gap: 8px 28px;
+  margin: 16px 0 0;
+  padding-top: 14px;
+  border-top: 1px dashed var(--line);
+}
+
+.stats dt { font: 12px/1.3 var(--mono); color: var(--muted); }
+.stats dd { margin: 4px 0 0; font: 600 17px/1.2 var(--mono); }
+
+.stats__spark { min-width: 0; }
+
+.stats__spark dd {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.stats__spark svg {
+  flex: 1;
+  min-width: 0;
+  height: 28px;
+}
+
+.spark__line {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 1.6;
+  vector-effect: non-scaling-stroke;
+  stroke-linejoin: round;
+}
+
+.spark__area { fill: color-mix(in srgb, var(--signal) 45%, transparent); }
+
+.spark__now { font-size: 14px; white-space: nowrap; }
+
+/* incidents */
+.log { list-style: none; margin: 0; padding: 0; }
+
+.log__item {
+  display: grid;
+  grid-template-columns: 130px 1fr;
+  gap: 16px;
+  padding: 14px 0 14px 18px;
+  border-left: 2px solid var(--line);
+  position: relative;
+}
+
+.log__item::before {
+  content: "";
+  position: absolute;
+  left: -6px;
+  top: 19px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--paper);
+  border: 2px solid var(--muted);
+}
+
+.log__item--open::before { background: var(--down); border-color: var(--down); }
+
+.log__item time { font: 13px/1.6 var(--mono); color: var(--muted); }
+.log__item p { overflow-wrap: anywhere; }
+.log__item .muted { font-size: 14px; }
+
+.empty {
+  padding: 18px 20px;
+  border: 1px dashed var(--line);
+  border-radius: 4px;
+  color: var(--muted);
+}
+
+.foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding-top: 18px;
+  border-top: 2px solid var(--ink);
+  font: 13px/1.4 var(--mono);
+  color: var(--muted);
+}
+
+.foot a { color: var(--ink); }
+
+@media (max-width: 720px) {
+  .stats { grid-template-columns: repeat(3, 1fr); gap: 10px 12px; }
+  .stats__spark { grid-column: 1 / -1; }
+}
+
+@media (max-width: 560px) {
+  .wrap { padding: 24px 16px; }
+  .top { flex-direction: column; align-items: flex-start; }
+  .stamp { text-align: left; }
+  .stamp br { display: none; }
+  .banner { padding: 18px; box-shadow: 4px 4px 0 var(--ink); }
+  .mon { padding: 16px 14px 14px; }
+  .mon__head { flex-direction: column; }
+  /* Ninety bars do not fit a phone: keep the last thirty. */
+  .bar:nth-child(-n+60) { display: none; }
+  .from90 { display: none; }
+  .from30 { display: inline; }
+  .log__item { grid-template-columns: 1fr; gap: 4px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .eye span, .pulse { animation: none; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <span class="eye" aria-hidden="true"><span></span></span>
+      <div>
+        <p class="kicker">дозор · мониторинг</p>
+        <h1>Статус сервисов «Северного ветра»</h1>
+      </div>
+    </div>
+    <p class="stamp">Обновлено <br><b>23 окт, 10:20</b></p>
+  </header>
+
+  <section class="banner banner--down" aria-live="polite">
+    <span class="pulse" aria-hidden="true"></span>
+    <div>
+      <h2>Частичный сбой</h2>
+      <p>Недоступно: 1 из 6.</p>
+    </div>
+  </section>
+
+  
+  <section class="group">
+    <h3 class="group__title">Для клиентов</h3>
+    
+    <article class="mon mon--up" id="m-shop">
+      <div class="mon__head">
+        <div class="mon__name">
+          <h4>Интернет-магазин</h4>
+          <code>https://shop.example.com</code>
+        </div>
+        <span class="pill pill--up">Работает</span>
+      </div>
+      
+      <div class="bars" role="img" aria-label="Доступность Интернет-магазин по дням за 90 дней, за этот период 99,90%">
+        <i class="bar bar--ok" title="26 июл — 100%, 0 сбоев из 72, в среднем 416 мс"></i><i class="bar bar--ok" title="27 июл — 100%, 0 сбоев из 72, в среднем 426 мс"></i><i class="bar bar--ok" title="28 июл — 100%, 0 сбоев из 72, в среднем 430 мс"></i><i class="bar bar--ok" title="29 июл — 100%, 0 сбоев из 72, в среднем 420 мс"></i><i class="bar bar--ok" title="30 июл — 100%, 0 сбоев из 72, в среднем 416 мс"></i><i class="bar bar--ok" title="31 июл — 100%, 0 сбоев из 72, в среднем 422 мс"></i><i class="bar bar--ok" title="1 авг — 100%, 0 сбоев из 72, в среднем 428 мс"></i><i class="bar bar--ok" title="2 авг — 100%, 0 сбоев из 72, в среднем 412 мс"></i><i class="bar bar--ok" title="3 авг — 100%, 0 сбоев из 72, в среднем 417 мс"></i><i class="bar bar--ok" title="4 авг — 100%, 0 сбоев из 72, в среднем 431 мс"></i><i class="bar bar--ok" title="5 авг — 100%, 0 сбоев из 72, в среднем 418 мс"></i><i class="bar bar--ok" title="6 авг — 100%, 0 сбоев из 72, в среднем 421 мс"></i><i class="bar bar--ok" title="7 авг — 100%, 0 сбоев из 72, в среднем 417 мс"></i><i class="bar bar--ok" title="8 авг — 100%, 0 сбоев из 72, в среднем 415 мс"></i><i class="bar bar--ok" title="9 авг — 100%, 0 сбоев из 72, в среднем 411 мс"></i><i class="bar bar--ok" title="10 авг — 100%, 0 сбоев из 72, в среднем 416 мс"></i><i class="bar bar--ok" title="11 авг — 100%, 0 сбоев из 72, в среднем 421 мс"></i><i class="bar bar--ok" title="12 авг — 100%, 0 сбоев из 72, в среднем 432 мс"></i><i class="bar bar--ok" title="13 авг — 100%, 0 сбоев из 72, в среднем 420 мс"></i><i class="bar bar--ok" title="14 авг — 100%, 0 сбоев из 72, в среднем 419 мс"></i><i class="bar bar--ok" title="15 авг — 100%, 0 сбоев из 72, в среднем 421 мс"></i><i class="bar bar--ok" title="16 авг — 100%, 0 сбоев из 72, в среднем 424 мс"></i><i class="bar bar--ok" title="17 авг — 100%, 0 сбоев из 72, в среднем 425 мс"></i><i class="bar bar--ok" title="18 авг — 100%, 0 сбоев из 72, в среднем 425 мс"></i><i class="bar bar--minor" title="19 авг — 98,61%, 1 сбой из 72, в среднем 421 мс"></i><i class="bar bar--ok" title="20 авг — 100%, 0 сбоев из 72, в среднем 427 мс"></i><i class="bar bar--bad" title="21 авг — 94,44%, 4 сбоя из 72, в среднем 950 мс"></i><i class="bar bar--ok" title="22 авг — 100%, 0 сбоев из 72, в среднем 414 мс"></i><i class="bar bar--ok" title="23 авг — 100%, 0 сбоев из 72, в среднем 414 мс"></i><i class="bar bar--ok" title="24 авг — 100%, 0 сбоев из 72, в среднем 416 мс"></i><i class="bar bar--ok" title="25 авг — 100%, 0 сбоев из 72, в среднем 412 мс"></i><i class="bar bar--ok" title="26 авг — 100%, 0 сбоев из 72, в среднем 412 мс"></i><i class="bar bar--ok" title="27 авг — 100%, 0 сбоев из 72, в среднем 426 мс"></i><i class="bar bar--ok" title="28 авг — 100%, 0 сбоев из 72, в среднем 419 мс"></i><i class="bar bar--ok" title="29 авг — 100%, 0 сбоев из 72, в среднем 428 мс"></i><i class="bar bar--ok" title="30 авг — 100%, 0 сбоев из 72, в среднем 413 мс"></i><i class="bar bar--ok" title="31 авг — 100%, 0 сбоев из 72, в среднем 416 мс"></i><i class="bar bar--ok" title="1 сен — 100%, 0 сбоев из 72, в среднем 411 мс"></i><i class="bar bar--ok" title="2 сен — 100%, 0 сбоев из 72, в среднем 419 мс"></i><i class="bar bar--ok" title="3 сен — 100%, 0 сбоев из 72, в среднем 421 мс"></i><i class="bar bar--ok" title="4 сен — 100%, 0 сбоев из 72, в среднем 421 мс"></i><i class="bar bar--ok" title="5 сен — 100%, 0 сбоев из 72, в среднем 425 мс"></i><i class="bar bar--ok" title="6 сен — 100%, 0 сбоев из 72, в среднем 430 мс"></i><i class="bar bar--ok" title="7 сен — 100%, 0 сбоев из 72, в среднем 426 мс"></i><i class="bar bar--ok" title="8 сен — 100%, 0 сбоев из 72, в среднем 410 мс"></i><i class="bar bar--ok" title="9 сен — 100%, 0 сбоев из 72, в среднем 425 мс"></i><i class="bar bar--ok" title="10 сен — 100%, 0 сбоев из 72, в среднем 423 мс"></i><i class="bar bar--ok" title="11 сен — 100%, 0 сбоев из 72, в среднем 413 мс"></i><i class="bar bar--ok" title="12 сен — 100%, 0 сбоев из 72, в среднем 422 мс"></i><i class="bar bar--minor" title="13 сен — 100%, 0 сбоев из 72, в среднем 752 мс"></i><i class="bar bar--ok" title="14 сен — 100%, 0 сбоев из 72, в среднем 425 мс"></i><i class="bar bar--ok" title="15 сен — 100%, 0 сбоев из 72, в среднем 421 мс"></i><i class="bar bar--ok" title="16 сен — 100%, 0 сбоев из 72, в среднем 410 мс"></i><i class="bar bar--ok" title="17 сен — 100%, 0 сбоев из 72, в среднем 415 мс"></i><i class="bar bar--ok" title="18 сен — 100%, 0 сбоев из 72, в среднем 420 мс"></i><i class="bar bar--ok" title="19 сен — 100%, 0 сбоев из 72, в среднем 412 мс"></i><i class="bar bar--ok" title="20 сен — 100%, 0 сбоев из 72, в среднем 413 мс"></i><i class="bar bar--ok" title="21 сен — 100%, 0 сбоев из 72, в среднем 424 мс"></i><i class="bar bar--minor" title="22 сен — 98,61%, 1 сбой из 72, в среднем 427 мс"></i><i class="bar bar--ok" title="23 сен — 100%, 0 сбоев из 72, в среднем 417 мс"></i><i class="bar bar--ok" title="24 сен — 100%, 0 сбоев из 72, в среднем 420 мс"></i><i class="bar bar--ok" title="25 сен — 100%, 0 сбоев из 72, в среднем 408 мс"></i><i class="bar bar--ok" title="26 сен — 100%, 0 сбоев из 72, в среднем 412 мс"></i><i class="bar bar--ok" title="27 сен — 100%, 0 сбоев из 72, в среднем 425 мс"></i><i class="bar bar--ok" title="28 сен — 100%, 0 сбоев из 72, в среднем 426 мс"></i><i class="bar bar--ok" title="29 сен — 100%, 0 сбоев из 72, в среднем 413 мс"></i><i class="bar bar--ok" title="30 сен — 100%, 0 сбоев из 72, в среднем 416 мс"></i><i class="bar bar--ok" title="1 окт — 100%, 0 сбоев из 72, в среднем 420 мс"></i><i class="bar bar--ok" title="2 окт — 100%, 0 сбоев из 72, в среднем 421 мс"></i><i class="bar bar--ok" title="3 окт — 100%, 0 сбоев из 72, в среднем 419 мс"></i><i class="bar bar--ok" title="4 окт — 100%, 0 сбоев из 72, в среднем 415 мс"></i><i class="bar bar--ok" title="5 окт — 100%, 0 сбоев из 72, в среднем 430 мс"></i><i class="bar bar--ok" title="6 окт — 100%, 0 сбоев из 72, в среднем 424 мс"></i><i class="bar bar--ok" title="7 окт — 100%, 0 сбоев из 72, в среднем 416 мс"></i><i class="bar bar--ok" title="8 окт — 100%, 0 сбоев из 72, в среднем 428 мс"></i><i class="bar bar--ok" title="9 окт — 100%, 0 сбоев из 195, в среднем 456 мс"></i><i class="bar bar--ok" title="10 окт — 100%, 0 сбоев из 288, в среднем 423 мс"></i><i class="bar bar--ok" title="11 окт — 100%, 0 сбоев из 288, в среднем 418 мс"></i><i class="bar bar--ok" title="12 окт — 100%, 0 сбоев из 288, в среднем 423 мс"></i><i class="bar bar--ok" title="13 окт — 100%, 0 сбоев из 288, в среднем 420 мс"></i><i class="bar bar--ok" title="14 окт — 100%, 0 сбоев из 288, в среднем 417 мс"></i><i class="bar bar--minor" title="15 окт — 99,65%, 1 сбой из 288, в среднем 417 мс"></i><i class="bar bar--ok" title="16 окт — 100%, 0 сбоев из 288, в среднем 416 мс"></i><i class="bar bar--ok" title="17 окт — 100%, 0 сбоев из 288, в среднем 418 мс"></i><i class="bar bar--ok" title="18 окт — 100%, 0 сбоев из 288, в среднем 412 мс"></i><i class="bar bar--ok" title="19 окт — 100%, 0 сбоев из 288, в среднем 418 мс"></i><i class="bar bar--minor" title="20 окт — 99,65%, 1 сбой из 288, в среднем 422 мс"></i><i class="bar bar--ok" title="21 окт — 100%, 0 сбоев из 288, в среднем 414 мс"></i><i class="bar bar--minor" title="22 окт — 99,65%, 1 сбой из 288, в среднем 417 мс"></i><i class="bar bar--ok" title="23 окт — 100%, 0 сбоев из 125, в среднем 334 мс"></i>
+      </div>
+      <div class="bars__legend"><span class="from90">26 июл</span><span class="from30">30 дней назад</span><span>сегодня</span></div>
+      <dl class="stats">
+        <div><dt>24 часа</dt><dd>99,65%</dd></div>
+        <div><dt>30 дней</dt><dd>99,94%</dd></div>
+        <div><dt>90 дней</dt><dd>99,90%</dd></div>
+        <div class="stats__spark">
+          <dt>Отклик за сутки · 269–603 мс</dt>
+          <dd>
+            
+            <svg viewBox="0 0 240 40" preserveAspectRatio="none" aria-hidden="true">
+              <path class="spark__area" d="M0.0,40 L0.0,15.9 L5.1,12.9 L10.2,16.4 L15.3,10.4 L20.4,9.4 L25.5,5.5 L30.6,7.6 L35.7,8.2 L40.9,9.7 L46.0,9.0 L51.1,4.4 L56.2,4.0 L61.3,10.9 L66.4,9.9 L71.5,13.1 L76.6,11.6 L81.7,11.7 L86.8,16.0 L91.9,21.0 L97.0,20.9 L102.1,19.4 L107.2,22.3 L112.3,23.5 L117.4,25.3 L122.6,27.8 L127.7,28.2 L132.8,29.7 L137.9,30.5 L143.0,36.0 L148.1,35.4 L153.2,34.7 L158.3,34.5 L163.4,35.2 L168.5,34.2 L173.6,34.9 L178.7,35.8 L183.8,33.7 L188.9,35.8 L194.0,32.8 L199.1,31.4 L204.3,29.0 L209.4,27.6 L214.5,24.5 L219.6,25.4 L224.7,23.5 L229.8,16.6 L234.9,19.9 L240.0,14.1 L240.0,40 Z"/>
+              <polyline class="spark__line" points="0.0,15.9 5.1,12.9 10.2,16.4 15.3,10.4 20.4,9.4 25.5,5.5 30.6,7.6 35.7,8.2 40.9,9.7 46.0,9.0 51.1,4.4 56.2,4.0 61.3,10.9 66.4,9.9 71.5,13.1 76.6,11.6 81.7,11.7 86.8,16.0 91.9,21.0 97.0,20.9 102.1,19.4 107.2,22.3 112.3,23.5 117.4,25.3 122.6,27.8 127.7,28.2 132.8,29.7 137.9,30.5 143.0,36.0 148.1,35.4 153.2,34.7 158.3,34.5 163.4,35.2 168.5,34.2 173.6,34.9 178.7,35.8 183.8,33.7 188.9,35.8 194.0,32.8 199.1,31.4 204.3,29.0 209.4,27.6 214.5,24.5 219.6,25.4 224.7,23.5 229.8,16.6 234.9,19.9 240.0,14.1"/>
+            </svg>
+            
+            <span class="spark__now">554 мс</span>
+          </dd>
+        </div>
+      </dl>
+    </article>
+    
+    <article class="mon mon--down" id="m-cabinet">
+      <div class="mon__head">
+        <div class="mon__name">
+          <h4>Личный кабинет</h4>
+          <code>https://lk.example.com/health</code>
+        </div>
+        <span class="pill pill--down">Недоступен</span>
+      </div>
+      <p class="mon__msg">нет ответа за 10 с</p>
+      <div class="bars" role="img" aria-label="Доступность Личный кабинет по дням за 90 дней, за этот период 99,82%">
+        <i class="bar bar--ok" title="26 июл — 100%, 0 сбоев из 72, в среднем 265 мс"></i><i class="bar bar--ok" title="27 июл — 100%, 0 сбоев из 72, в среднем 259 мс"></i><i class="bar bar--ok" title="28 июл — 100%, 0 сбоев из 72, в среднем 255 мс"></i><i class="bar bar--ok" title="29 июл — 100%, 0 сбоев из 72, в среднем 264 мс"></i><i class="bar bar--ok" title="30 июл — 100%, 0 сбоев из 72, в среднем 258 мс"></i><i class="bar bar--ok" title="31 июл — 100%, 0 сбоев из 72, в среднем 260 мс"></i><i class="bar bar--ok" title="1 авг — 100%, 0 сбоев из 72, в среднем 262 мс"></i><i class="bar bar--ok" title="2 авг — 100%, 0 сбоев из 72, в среднем 256 мс"></i><i class="bar bar--ok" title="3 авг — 100%, 0 сбоев из 72, в среднем 261 мс"></i><i class="bar bar--ok" title="4 авг — 100%, 0 сбоев из 72, в среднем 263 мс"></i><i class="bar bar--ok" title="5 авг — 100%, 0 сбоев из 72, в среднем 261 мс"></i><i class="bar bar--ok" title="6 авг — 100%, 0 сбоев из 72, в среднем 260 мс"></i><i class="bar bar--ok" title="7 авг — 100%, 0 сбоев из 72, в среднем 261 мс"></i><i class="bar bar--ok" title="8 авг — 100%, 0 сбоев из 72, в среднем 261 мс"></i><i class="bar bar--ok" title="9 авг — 100%, 0 сбоев из 72, в среднем 258 мс"></i><i class="bar bar--ok" title="10 авг — 100%, 0 сбоев из 72, в среднем 258 мс"></i><i class="bar bar--ok" title="11 авг — 100%, 0 сбоев из 72, в среднем 261 мс"></i><i class="bar bar--ok" title="12 авг — 100%, 0 сбоев из 72, в среднем 258 мс"></i><i class="bar bar--ok" title="13 авг — 100%, 0 сбоев из 72, в среднем 264 мс"></i><i class="bar bar--minor" title="14 авг — 98,61%, 1 сбой из 72, в среднем 258 мс"></i><i class="bar bar--ok" title="15 авг — 100%, 0 сбоев из 72, в среднем 257 мс"></i><i class="bar bar--ok" title="16 авг — 100%, 0 сбоев из 72, в среднем 259 мс"></i><i class="bar bar--ok" title="17 авг — 100%, 0 сбоев из 72, в среднем 260 мс"></i><i class="bar bar--ok" title="18 авг — 100%, 0 сбоев из 72, в среднем 265 мс"></i><i class="bar bar--ok" title="19 авг — 100%, 0 сбоев из 72, в среднем 259 мс"></i><i class="bar bar--ok" title="20 авг — 100%, 0 сбоев из 72, в среднем 255 мс"></i><i class="bar bar--ok" title="21 авг — 100%, 0 сбоев из 72, в среднем 262 мс"></i><i class="bar bar--ok" title="22 авг — 100%, 0 сбоев из 72, в среднем 265 мс"></i><i class="bar bar--ok" title="23 авг — 100%, 0 сбоев из 72, в среднем 260 мс"></i><i class="bar bar--ok" title="24 авг — 100%, 0 сбоев из 72, в среднем 255 мс"></i><i class="bar bar--ok" title="25 авг — 100%, 0 сбоев из 72, в среднем 253 мс"></i><i class="bar bar--ok" title="26 авг — 100%, 0 сбоев из 72, в среднем 258 мс"></i><i class="bar bar--ok" title="27 авг — 100%, 0 сбоев из 72, в среднем 254 мс"></i><i class="bar bar--ok" title="28 авг — 100%, 0 сбоев из 72, в среднем 267 мс"></i><i class="bar bar--ok" title="29 авг — 100%, 0 сбоев из 72, в среднем 258 мс"></i><i class="bar bar--ok" title="30 авг — 100%, 0 сбоев из 72, в среднем 258 мс"></i><i class="bar bar--ok" title="31 авг — 100%, 0 сбоев из 72, в среднем 262 мс"></i><i class="bar bar--minor" title="1 сен — 98,61%, 1 сбой из 72, в среднем 261 мс"></i><i class="bar bar--ok" title="2 сен — 100%, 0 сбоев из 72, в среднем 268 мс"></i><i class="bar bar--ok" title="3 сен — 100%, 0 сбоев из 72, в среднем 251 мс"></i><i class="bar bar--ok" title="4 сен — 100%, 0 сбоев из 72, в среднем 261 мс"></i><i class="bar bar--ok" title="5 сен — 100%, 0 сбоев из 72, в среднем 260 мс"></i><i class="bar bar--ok" title="6 сен — 100%, 0 сбоев из 72, в среднем 263 мс"></i><i class="bar bar--ok" title="7 сен — 100%, 0 сбоев из 72, в среднем 259 мс"></i><i class="bar bar--ok" title="8 сен — 100%, 0 сбоев из 72, в среднем 260 мс"></i><i class="bar bar--ok" title="9 сен — 100%, 0 сбоев из 72, в среднем 260 мс"></i><i class="bar bar--ok" title="10 сен — 100%, 0 сбоев из 72, в среднем 260 мс"></i><i class="bar bar--ok" title="11 сен — 100%, 0 сбоев из 72, в среднем 258 мс"></i><i class="bar bar--ok" title="12 сен — 100%, 0 сбоев из 72, в среднем 259 мс"></i><i class="bar bar--ok" title="13 сен — 100%, 0 сбоев из 72, в среднем 258 мс"></i><i class="bar bar--ok" title="14 сен — 100%, 0 сбоев из 72, в среднем 264 мс"></i><i class="bar bar--ok" title="15 сен — 100%, 0 сбоев из 72, в среднем 262 мс"></i><i class="bar bar--ok" title="16 сен — 100%, 0 сбоев из 72, в среднем 255 мс"></i><i class="bar bar--ok" title="17 сен — 100%, 0 сбоев из 72, в среднем 256 мс"></i><i class="bar bar--ok" title="18 сен — 100%, 0 сбоев из 72, в среднем 264 мс"></i><i class="bar bar--ok" title="19 сен — 100%, 0 сбоев из 72, в среднем 252 мс"></i><i class="bar bar--ok" title="20 сен — 100%, 0 сбоев из 72, в среднем 262 мс"></i><i class="bar bar--ok" title="21 сен — 100%, 0 сбоев из 72, в среднем 259 мс"></i><i class="bar bar--ok" title="22 сен — 100%, 0 сбоев из 72, в среднем 255 мс"></i><i class="bar bar--ok" title="23 сен — 100%, 0 сбоев из 72, в среднем 261 мс"></i><i class="bar bar--ok" title="24 сен — 100%, 0 сбоев из 72, в среднем 258 мс"></i><i class="bar bar--ok" title="25 сен — 100%, 0 сбоев из 72, в среднем 260 мс"></i><i class="bar bar--ok" title="26 сен — 100%, 0 сбоев из 72, в среднем 256 мс"></i><i class="bar bar--ok" title="27 сен — 100%, 0 сбоев из 72, в среднем 249 мс"></i><i class="bar bar--ok" title="28 сен — 100%, 0 сбоев из 72, в среднем 255 мс"></i><i class="bar bar--minor" title="29 сен — 98,61%, 1 сбой из 72, в среднем 265 мс"></i><i class="bar bar--ok" title="30 сен — 100%, 0 сбоев из 72, в среднем 256 мс"></i><i class="bar bar--ok" title="1 окт — 100%, 0 сбоев из 72, в среднем 252 мс"></i><i class="bar bar--minor" title="2 окт — 98,61%, 1 сбой из 72, в среднем 255 мс"></i><i class="bar bar--ok" title="3 окт — 100%, 0 сбоев из 72, в среднем 264 мс"></i><i class="bar bar--ok" title="4 окт — 100%, 0 сбоев из 72, в среднем 259 мс"></i><i class="bar bar--ok" title="5 окт — 100%, 0 сбоев из 72, в среднем 260 мс"></i><i class="bar bar--ok" title="6 окт — 100%, 0 сбоев из 72, в среднем 259 мс"></i><i class="bar bar--warn" title="7 окт — 97,22%, 2 сбоя из 72, в среднем 256 мс"></i><i class="bar bar--ok" title="8 окт — 100%, 0 сбоев из 72, в среднем 264 мс"></i><i class="bar bar--ok" title="9 окт — 100%, 0 сбоев из 195, в среднем 287 мс"></i><i class="bar bar--minor" title="10 окт — 99,65%, 1 сбой из 288, в среднем 259 мс"></i><i class="bar bar--ok" title="11 окт — 100%, 0 сбоев из 288, в среднем 260 мс"></i><i class="bar bar--ok" title="12 окт — 100%, 0 сбоев из 288, в среднем 258 мс"></i><i class="bar bar--ok" title="13 окт — 100%, 0 сбоев из 288, в среднем 261 мс"></i><i class="bar bar--ok" title="14 окт — 100%, 0 сбоев из 288, в среднем 260 мс"></i><i class="bar bar--ok" title="15 окт — 100%, 0 сбоев из 288, в среднем 259 мс"></i><i class="bar bar--ok" title="16 окт — 100%, 0 сбоев из 288, в среднем 261 мс"></i><i class="bar bar--minor" title="17 окт — 99,65%, 1 сбой из 288, в среднем 262 мс"></i><i class="bar bar--minor" title="18 окт — 99,65%, 1 сбой из 288, в среднем 256 мс"></i><i class="bar bar--ok" title="19 окт — 100%, 0 сбоев из 288, в среднем 260 мс"></i><i class="bar bar--ok" title="20 окт — 100%, 0 сбоев из 288, в среднем 256 мс"></i><i class="bar bar--ok" title="21 окт — 100%, 0 сбоев из 288, в среднем 260 мс"></i><i class="bar bar--ok" title="22 окт — 100%, 0 сбоев из 288, в среднем 259 мс"></i><i class="bar bar--bad" title="23 окт — 93,60%, 8 сбоев из 125, в среднем 833 мс"></i>
+      </div>
+      <div class="bars__legend"><span class="from90">26 июл</span><span class="from30">30 дней назад</span><span>сегодня</span></div>
+      <dl class="stats">
+        <div><dt>24 часа</dt><dd>97,23%</dd></div>
+        <div><dt>30 дней</dt><dd>99,70%</dd></div>
+        <div><dt>90 дней</dt><dd>99,82%</dd></div>
+        <div class="stats__spark">
+          <dt>Отклик за сутки · 168–372 мс</dt>
+          <dd>
+            
+            <svg viewBox="0 0 240 40" preserveAspectRatio="none" aria-hidden="true">
+              <path class="spark__area" d="M0.0,40 L0.0,17.7 L5.1,13.2 L10.2,7.3 L15.3,9.6 L20.4,10.6 L25.5,7.9 L30.6,8.8 L35.7,4.0 L40.9,8.9 L46.0,8.4 L51.1,5.3 L56.2,11.7 L61.3,6.9 L66.4,10.3 L71.5,9.7 L76.6,10.2 L81.7,11.4 L86.8,12.8 L91.9,17.1 L97.0,18.3 L102.1,22.8 L107.2,20.9 L112.3,23.4 L117.4,26.2 L122.6,26.2 L127.7,28.0 L132.8,30.8 L137.9,30.3 L143.0,31.4 L148.1,32.3 L153.2,35.4 L158.3,35.0 L163.4,35.4 L168.5,34.5 L173.6,36.0 L178.7,32.5 L183.8,32.9 L188.9,33.6 L194.0,32.5 L199.1,30.6 L204.3,28.6 L209.4,27.7 L214.5,25.4 L219.6,26.7 L224.7,20.1 L229.8,16.7 L234.9,18.7 L234.9,40 Z"/>
+              <polyline class="spark__line" points="0.0,17.7 5.1,13.2 10.2,7.3 15.3,9.6 20.4,10.6 25.5,7.9 30.6,8.8 35.7,4.0 40.9,8.9 46.0,8.4 51.1,5.3 56.2,11.7 61.3,6.9 66.4,10.3 71.5,9.7 76.6,10.2 81.7,11.4 86.8,12.8 91.9,17.1 97.0,18.3 102.1,22.8 107.2,20.9 112.3,23.4 117.4,26.2 122.6,26.2 127.7,28.0 132.8,30.8 137.9,30.3 143.0,31.4 148.1,32.3 153.2,35.4 158.3,35.0 163.4,35.4 168.5,34.5 173.6,36.0 178.7,32.5 183.8,32.9 188.9,33.6 194.0,32.5 199.1,30.6 204.3,28.6 209.4,27.7 214.5,25.4 219.6,26.7 224.7,20.1 229.8,16.7 234.9,18.7"/>
+            </svg>
+            
+            
+          </dd>
+        </div>
+      </dl>
+    </article>
+    
+    <article class="mon mon--up" id="m-api">
+      <div class="mon__head">
+        <div class="mon__name">
+          <h4>Публичный API</h4>
+          <code>https://api.example.com/v1/ping</code>
+        </div>
+        <span class="pill pill--up">Работает</span>
+      </div>
+      
+      <div class="bars" role="img" aria-label="Доступность Публичный API по дням за 90 дней, за этот период 99,75%">
+        <i class="bar bar--ok" title="26 июл — 100%, 0 сбоев из 72, в среднем 138 мс"></i><i class="bar bar--ok" title="27 июл — 100%, 0 сбоев из 72, в среднем 140 мс"></i><i class="bar bar--ok" title="28 июл — 100%, 0 сбоев из 72, в среднем 137 мс"></i><i class="bar bar--ok" title="29 июл — 100%, 0 сбоев из 72, в среднем 139 мс"></i><i class="bar bar--ok" title="30 июл — 100%, 0 сбоев из 72, в среднем 142 мс"></i><i class="bar bar--ok" title="31 июл — 100%, 0 сбоев из 72, в среднем 141 мс"></i><i class="bar bar--ok" title="1 авг — 100%, 0 сбоев из 72, в среднем 139 мс"></i><i class="bar bar--ok" title="2 авг — 100%, 0 сбоев из 72, в среднем 140 мс"></i><i class="bar bar--ok" title="3 авг — 100%, 0 сбоев из 72, в среднем 139 мс"></i><i class="bar bar--ok" title="4 авг — 100%, 0 сбоев из 72, в среднем 137 мс"></i><i class="bar bar--ok" title="5 авг — 100%, 0 сбоев из 72, в среднем 138 мс"></i><i class="bar bar--ok" title="6 авг — 100%, 0 сбоев из 72, в среднем 138 мс"></i><i class="bar bar--minor" title="7 авг — 98,61%, 1 сбой из 72, в среднем 137 мс"></i><i class="bar bar--ok" title="8 авг — 100%, 0 сбоев из 72, в среднем 140 мс"></i><i class="bar bar--ok" title="9 авг — 100%, 0 сбоев из 72, в среднем 138 мс"></i><i class="bar bar--ok" title="10 авг — 100%, 0 сбоев из 72, в среднем 138 мс"></i><i class="bar bar--minor" title="11 авг — 98,61%, 1 сбой из 72, в среднем 137 мс"></i><i class="bar bar--ok" title="12 авг — 100%, 0 сбоев из 72, в среднем 137 мс"></i><i class="bar bar--ok" title="13 авг — 100%, 0 сбоев из 72, в среднем 138 мс"></i><i class="bar bar--ok" title="14 авг — 100%, 0 сбоев из 72, в среднем 141 мс"></i><i class="bar bar--ok" title="15 авг — 100%, 0 сбоев из 72, в среднем 137 мс"></i><i class="bar bar--ok" title="16 авг — 100%, 0 сбоев из 72, в среднем 138 мс"></i><i class="bar bar--ok" title="17 авг — 100%, 0 сбоев из 72, в среднем 136 мс"></i><i class="bar bar--ok" title="18 авг — 100%, 0 сбоев из 72, в среднем 138 мс"></i><i class="bar bar--ok" title="19 авг — 100%, 0 сбоев из 72, в среднем 140 мс"></i><i class="bar bar--ok" title="20 авг — 100%, 0 сбоев из 72, в среднем 138 мс"></i><i class="bar bar--ok" title="21 авг — 100%, 0 сбоев из 72, в среднем 139 мс"></i><i class="bar bar--ok" title="22 авг — 100%, 0 сбоев из 72, в среднем 143 мс"></i><i class="bar bar--ok" title="23 авг — 100%, 0 сбоев из 72, в среднем 134 мс"></i><i class="bar bar--ok" title="24 авг — 100%, 0 сбоев из 72, в среднем 138 мс"></i><i class="bar bar--ok" title="25 авг — 100%, 0 сбоев из 72, в среднем 138 мс"></i><i class="bar bar--ok" title="26 авг — 100%, 0 сбоев из 72, в среднем 142 мс"></i><i class="bar bar--ok" title="27 авг — 100%, 0 сбоев из 72, в среднем 137 мс"></i><i class="bar bar--ok" title="28 авг — 100%, 0 сбоев из 72, в среднем 144 мс"></i><i class="bar bar--ok" title="29 авг — 100%, 0 сбоев из 72, в среднем 138 мс"></i><i class="bar bar--ok" title="30 авг — 100%, 0 сбоев из 72, в среднем 139 мс"></i><i class="bar bar--ok" title="31 авг — 100%, 0 сбоев из 72, в среднем 138 мс"></i><i class="bar bar--ok" title="1 сен — 100%, 0 сбоев из 72, в среднем 139 мс"></i><i class="bar bar--ok" title="2 сен — 100%, 0 сбоев из 72, в среднем 141 мс"></i><i class="bar bar--ok" title="3 сен — 100%, 0 сбоев из 72, в среднем 142 мс"></i><i class="bar bar--ok" title="4 сен — 100%, 0 сбоев из 72, в среднем 138 мс"></i><i class="bar bar--ok" title="5 сен — 100%, 0 сбоев из 72, в среднем 140 мс"></i><i class="bar bar--ok" title="6 сен — 100%, 0 сбоев из 72, в среднем 140 мс"></i><i class="bar bar--ok" title="7 сен — 100%, 0 сбоев из 72, в среднем 135 мс"></i><i class="bar bar--ok" title="8 сен — 100%, 0 сбоев из 72, в среднем 136 мс"></i><i class="bar bar--ok" title="9 сен — 100%, 0 сбоев из 72, в среднем 138 мс"></i><i class="bar bar--minor" title="10 сен — 98,61%, 1 сбой из 72, в среднем 139 мс"></i><i class="bar bar--ok" title="11 сен — 100%, 0 сбоев из 72, в среднем 139 мс"></i><i class="bar bar--ok" title="12 сен — 100%, 0 сбоев из 72, в среднем 140 мс"></i><i class="bar bar--ok" title="13 сен — 100%, 0 сбоев из 72, в среднем 139 мс"></i><i class="bar bar--ok" title="14 сен — 100%, 0 сбоев из 72, в среднем 137 мс"></i><i class="bar bar--ok" title="15 сен — 100%, 0 сбоев из 72, в среднем 142 мс"></i><i class="bar bar--ok" title="16 сен — 100%, 0 сбоев из 72, в среднем 137 мс"></i><i class="bar bar--ok" title="17 сен — 100%, 0 сбоев из 72, в среднем 139 мс"></i><i class="bar bar--ok" title="18 сен — 100%, 0 сбоев из 72, в среднем 140 мс"></i><i class="bar bar--ok" title="19 сен — 100%, 0 сбоев из 72, в среднем 141 мс"></i><i class="bar bar--ok" title="20 сен — 100%, 0 сбоев из 72, в среднем 141 мс"></i><i class="bar bar--ok" title="21 сен — 100%, 0 сбоев из 72, в среднем 140 мс"></i><i class="bar bar--ok" title="22 сен — 100%, 0 сбоев из 72, в среднем 138 мс"></i><i class="bar bar--ok" title="23 сен — 100%, 0 сбоев из 72, в среднем 139 мс"></i><i class="bar bar--ok" title="24 сен — 100%, 0 сбоев из 72, в среднем 140 мс"></i><i class="bar bar--ok" title="25 сен — 100%, 0 сбоев из 72, в среднем 140 мс"></i><i class="bar bar--ok" title="26 сен — 100%, 0 сбоев из 72, в среднем 139 мс"></i><i class="bar bar--ok" title="27 сен — 100%, 0 сбоев из 72, в среднем 135 мс"></i><i class="bar bar--ok" title="28 сен — 100%, 0 сбоев из 72, в среднем 140 мс"></i><i class="bar bar--ok" title="29 сен — 100%, 0 сбоев из 72, в среднем 138 мс"></i><i class="bar bar--ok" title="30 сен — 100%, 0 сбоев из 72, в среднем 139 мс"></i><i class="bar bar--ok" title="1 окт — 100%, 0 сбоев из 72, в среднем 138 мс"></i><i class="bar bar--ok" title="2 окт — 100%, 0 сбоев из 72, в среднем 141 мс"></i><i class="bar bar--ok" title="3 окт — 100%, 0 сбоев из 72, в среднем 139 мс"></i><i class="bar bar--ok" title="4 окт — 100%, 0 сбоев из 72, в среднем 140 мс"></i><i class="bar bar--ok" title="5 окт — 100%, 0 сбоев из 72, в среднем 138 мс"></i><i class="bar bar--ok" title="6 окт — 100%, 0 сбоев из 72, в среднем 139 мс"></i><i class="bar bar--ok" title="7 окт — 100%, 0 сбоев из 72, в среднем 136 мс"></i><i class="bar bar--ok" title="8 окт — 100%, 0 сбоев из 72, в среднем 138 мс"></i><i class="bar bar--ok" title="9 окт — 100%, 0 сбоев из 195, в среднем 153 мс"></i><i class="bar bar--ok" title="10 окт — 100%, 0 сбоев из 288, в среднем 138 мс"></i><i class="bar bar--bad" title="11 окт — 93,40%, 19 сбоев из 288, в среднем 786 мс"></i><i class="bar bar--ok" title="12 окт — 100%, 0 сбоев из 288, в среднем 138 мс"></i><i class="bar bar--ok" title="13 окт — 100%, 0 сбоев из 288, в среднем 140 мс"></i><i class="bar bar--ok" title="14 окт — 100%, 0 сбоев из 288, в среднем 140 мс"></i><i class="bar bar--ok" title="15 окт — 100%, 0 сбоев из 288, в среднем 140 мс"></i><i class="bar bar--ok" title="16 окт — 100%, 0 сбоев из 288, в среднем 137 мс"></i><i class="bar bar--ok" title="17 окт — 100%, 0 сбоев из 288, в среднем 137 мс"></i><i class="bar bar--minor" title="18 окт — 99,65%, 1 сбой из 288, в среднем 139 мс"></i><i class="bar bar--ok" title="19 окт — 100%, 0 сбоев из 288, в среднем 140 мс"></i><i class="bar bar--ok" title="20 окт — 100%, 0 сбоев из 288, в среднем 138 мс"></i><i class="bar bar--ok" title="21 окт — 100%, 0 сбоев из 288, в среднем 138 мс"></i><i class="bar bar--ok" title="22 окт — 100%, 0 сбоев из 288, в среднем 139 мс"></i><i class="bar bar--ok" title="23 окт — 100%, 0 сбоев из 125, в среднем 109 мс"></i>
+      </div>
+      <div class="bars__legend"><span class="from90">26 июл</span><span class="from30">30 дней назад</span><span>сегодня</span></div>
+      <dl class="stats">
+        <div><dt>24 часа</dt><dd>100%</dd></div>
+        <div><dt>30 дней</dt><dd>99,61%</dd></div>
+        <div><dt>90 дней</dt><dd>99,75%</dd></div>
+        <div class="stats__spark">
+          <dt>Отклик за сутки · 88–201 мс</dt>
+          <dd>
+            
+            <svg viewBox="0 0 240 40" preserveAspectRatio="none" aria-hidden="true">
+              <path class="spark__area" d="M0.0,40 L0.0,16.0 L5.1,15.1 L10.2,14.1 L15.3,12.3 L20.4,7.2 L25.5,9.6 L30.6,8.6 L35.7,4.0 L40.9,9.8 L46.0,4.8 L51.1,11.4 L56.2,8.9 L61.3,8.2 L66.4,11.3 L71.5,11.7 L76.6,13.4 L81.7,13.0 L86.8,14.9 L91.9,16.4 L97.0,17.5 L102.1,19.9 L107.2,19.7 L112.3,24.5 L117.4,27.7 L122.6,29.7 L127.7,27.8 L132.8,29.8 L137.9,32.4 L143.0,31.0 L148.1,34.6 L153.2,34.4 L158.3,34.2 L163.4,36.0 L168.5,35.3 L173.6,33.4 L178.7,34.3 L183.8,33.4 L188.9,34.1 L194.0,34.1 L199.1,30.8 L204.3,28.3 L209.4,28.0 L214.5,27.6 L219.6,27.2 L224.7,24.4 L229.8,20.9 L234.9,19.6 L240.0,15.1 L240.0,40 Z"/>
+              <polyline class="spark__line" points="0.0,16.0 5.1,15.1 10.2,14.1 15.3,12.3 20.4,7.2 25.5,9.6 30.6,8.6 35.7,4.0 40.9,9.8 46.0,4.8 51.1,11.4 56.2,8.9 61.3,8.2 66.4,11.3 71.5,11.7 76.6,13.4 81.7,13.0 86.8,14.9 91.9,16.4 97.0,17.5 102.1,19.9 107.2,19.7 112.3,24.5 117.4,27.7 122.6,29.7 127.7,27.8 132.8,29.8 137.9,32.4 143.0,31.0 148.1,34.6 153.2,34.4 158.3,34.2 163.4,36.0 168.5,35.3 173.6,33.4 178.7,34.3 183.8,33.4 188.9,34.1 194.0,34.1 199.1,30.8 204.3,28.3 209.4,28.0 214.5,27.6 219.6,27.2 224.7,24.4 229.8,20.9 234.9,19.6 240.0,15.1"/>
+            </svg>
+            
+            <span class="spark__now">185 мс</span>
+          </dd>
+        </div>
+      </dl>
+    </article>
+    
+    <article class="mon mon--degraded" id="m-cdn">
+      <div class="mon__head">
+        <div class="mon__name">
+          <h4>CDN картинок</h4>
+          <code>https://img.example.com/ping.gif</code>
+        </div>
+        <span class="pill pill--degraded">Есть проблемы</span>
+      </div>
+      <p class="mon__msg">сертификат истекает через 9 дней</p>
+      <div class="bars" role="img" aria-label="Доступность CDN картинок по дням за 90 дней, за этот период 99,96%">
+        <i class="bar bar--none" title="26 июл — нет данных"></i><i class="bar bar--none" title="27 июл — нет данных"></i><i class="bar bar--none" title="28 июл — нет данных"></i><i class="bar bar--none" title="29 июл — нет данных"></i><i class="bar bar--none" title="30 июл — нет данных"></i><i class="bar bar--none" title="31 июл — нет данных"></i><i class="bar bar--none" title="1 авг — нет данных"></i><i class="bar bar--none" title="2 авг — нет данных"></i><i class="bar bar--none" title="3 авг — нет данных"></i><i class="bar bar--none" title="4 авг — нет данных"></i><i class="bar bar--none" title="5 авг — нет данных"></i><i class="bar bar--none" title="6 авг — нет данных"></i><i class="bar bar--none" title="7 авг — нет данных"></i><i class="bar bar--none" title="8 авг — нет данных"></i><i class="bar bar--none" title="9 авг — нет данных"></i><i class="bar bar--none" title="10 авг — нет данных"></i><i class="bar bar--none" title="11 авг — нет данных"></i><i class="bar bar--none" title="12 авг — нет данных"></i><i class="bar bar--none" title="13 авг — нет данных"></i><i class="bar bar--none" title="14 авг — нет данных"></i><i class="bar bar--none" title="15 авг — нет данных"></i><i class="bar bar--none" title="16 авг — нет данных"></i><i class="bar bar--none" title="17 авг — нет данных"></i><i class="bar bar--none" title="18 авг — нет данных"></i><i class="bar bar--none" title="19 авг — нет данных"></i><i class="bar bar--none" title="20 авг — нет данных"></i><i class="bar bar--none" title="21 авг — нет данных"></i><i class="bar bar--none" title="22 авг — нет данных"></i><i class="bar bar--none" title="23 авг — нет данных"></i><i class="bar bar--none" title="24 авг — нет данных"></i><i class="bar bar--none" title="25 авг — нет данных"></i><i class="bar bar--none" title="26 авг — нет данных"></i><i class="bar bar--none" title="27 авг — нет данных"></i><i class="bar bar--none" title="28 авг — нет данных"></i><i class="bar bar--none" title="29 авг — нет данных"></i><i class="bar bar--none" title="30 авг — нет данных"></i><i class="bar bar--none" title="31 авг — нет данных"></i><i class="bar bar--none" title="1 сен — нет данных"></i><i class="bar bar--none" title="2 сен — нет данных"></i><i class="bar bar--ok" title="3 сен — 100%, 0 сбоев из 41, в среднем 69 мс"></i><i class="bar bar--ok" title="4 сен — 100%, 0 сбоев из 72, в среднем 59 мс"></i><i class="bar bar--ok" title="5 сен — 100%, 0 сбоев из 72, в среднем 60 мс"></i><i class="bar bar--ok" title="6 сен — 100%, 0 сбоев из 72, в среднем 58 мс"></i><i class="bar bar--ok" title="7 сен — 100%, 0 сбоев из 72, в среднем 59 мс"></i><i class="bar bar--ok" title="8 сен — 100%, 0 сбоев из 72, в среднем 59 мс"></i><i class="bar bar--ok" title="9 сен — 100%, 0 сбоев из 72, в среднем 58 мс"></i><i class="bar bar--ok" title="10 сен — 100%, 0 сбоев из 72, в среднем 61 мс"></i><i class="bar bar--ok" title="11 сен — 100%, 0 сбоев из 72, в среднем 59 мс"></i><i class="bar bar--ok" title="12 сен — 100%, 0 сбоев из 72, в среднем 59 мс"></i><i class="bar bar--ok" title="13 сен — 100%, 0 сбоев из 72, в среднем 59 мс"></i><i class="bar bar--ok" title="14 сен — 100%, 0 сбоев из 72, в среднем 60 мс"></i><i class="bar bar--ok" title="15 сен — 100%, 0 сбоев из 72, в среднем 59 мс"></i><i class="bar bar--ok" title="16 сен — 100%, 0 сбоев из 72, в среднем 58 мс"></i><i class="bar bar--ok" title="17 сен — 100%, 0 сбоев из 72, в среднем 59 мс"></i><i class="bar bar--ok" title="18 сен — 100%, 0 сбоев из 72, в среднем 59 мс"></i><i class="bar bar--ok" title="19 сен — 100%, 0 сбоев из 72, в среднем 59 мс"></i><i class="bar bar--ok" title="20 сен — 100%, 0 сбоев из 72, в среднем 60 мс"></i><i class="bar bar--ok" title="21 сен — 100%, 0 сбоев из 72, в среднем 59 мс"></i><i class="bar bar--ok" title="22 сен — 100%, 0 сбоев из 72, в среднем 59 мс"></i><i class="bar bar--ok" title="23 сен — 100%, 0 сбоев из 72, в среднем 60 мс"></i><i class="bar bar--ok" title="24 сен — 100%, 0 сбоев из 72, в среднем 59 мс"></i><i class="bar bar--ok" title="25 сен — 100%, 0 сбоев из 72, в среднем 60 мс"></i><i class="bar bar--ok" title="26 сен — 100%, 0 сбоев из 72, в среднем 58 мс"></i><i class="bar bar--ok" title="27 сен — 100%, 0 сбоев из 72, в среднем 60 мс"></i><i class="bar bar--ok" title="28 сен — 100%, 0 сбоев из 72, в среднем 59 мс"></i><i class="bar bar--ok" title="29 сен — 100%, 0 сбоев из 72, в среднем 60 мс"></i><i class="bar bar--ok" title="30 сен — 100%, 0 сбоев из 72, в среднем 59 мс"></i><i class="bar bar--ok" title="1 окт — 100%, 0 сбоев из 72, в среднем 58 мс"></i><i class="bar bar--ok" title="2 окт — 100%, 0 сбоев из 72, в среднем 60 мс"></i><i class="bar bar--ok" title="3 окт — 100%, 0 сбоев из 72, в среднем 59 мс"></i><i class="bar bar--ok" title="4 окт — 100%, 0 сбоев из 72, в среднем 60 мс"></i><i class="bar bar--ok" title="5 окт — 100%, 0 сбоев из 72, в среднем 60 мс"></i><i class="bar bar--ok" title="6 окт — 100%, 0 сбоев из 72, в среднем 59 мс"></i><i class="bar bar--ok" title="7 окт — 100%, 0 сбоев из 72, в среднем 58 мс"></i><i class="bar bar--ok" title="8 окт — 100%, 0 сбоев из 72, в среднем 59 мс"></i><i class="bar bar--ok" title="9 окт — 100%, 0 сбоев из 195, в среднем 65 мс"></i><i class="bar bar--ok" title="10 окт — 100%, 0 сбоев из 288, в среднем 59 мс"></i><i class="bar bar--ok" title="11 окт — 100%, 0 сбоев из 288, в среднем 59 мс"></i><i class="bar bar--ok" title="12 окт — 100%, 0 сбоев из 288, в среднем 60 мс"></i><i class="bar bar--ok" title="13 окт — 100%, 0 сбоев из 288, в среднем 59 мс"></i><i class="bar bar--ok" title="14 окт — 100%, 0 сбоев из 288, в среднем 59 мс"></i><i class="bar bar--minor" title="15 окт — 99,65%, 1 сбой из 288, в среднем 59 мс"></i><i class="bar bar--ok" title="16 окт — 100%, 0 сбоев из 288, в среднем 59 мс"></i><i class="bar bar--ok" title="17 окт — 100%, 0 сбоев из 288, в среднем 59 мс"></i><i class="bar bar--ok" title="18 окт — 100%, 0 сбоев из 288, в среднем 59 мс"></i><i class="bar bar--ok" title="19 окт — 100%, 0 сбоев из 288, в среднем 59 мс"></i><i class="bar bar--ok" title="20 окт — 100%, 0 сбоев из 288, в среднем 59 мс"></i><i class="bar bar--minor" title="21 окт — 99,65%, 1 сбой из 288, в среднем 157 мс"></i><i class="bar bar--minor" title="22 окт — 100%, 0 сбоев из 288, в среднем 207 мс"></i><i class="bar bar--minor" title="23 окт — 100%, 0 сбоев из 125, в среднем 160 мс"></i>
+      </div>
+      <div class="bars__legend"><span class="from90">26 июл</span><span class="from30">30 дней назад</span><span>сегодня</span></div>
+      <dl class="stats">
+        <div><dt>24 часа</dt><dd>100%</dd></div>
+        <div><dt>30 дней</dt><dd>99,96%</dd></div>
+        <div><dt>90 дней</dt><dd>99,96%</dd></div>
+        <div class="stats__spark">
+          <dt>Отклик за сутки · 130–303 мс</dt>
+          <dd>
+            
+            <svg viewBox="0 0 240 40" preserveAspectRatio="none" aria-hidden="true">
+              <path class="spark__area" d="M0.0,40 L0.0,14.1 L5.1,16.5 L10.2,15.8 L15.3,12.4 L20.4,12.3 L25.5,15.2 L30.6,10.4 L35.7,9.3 L40.9,10.7 L46.0,8.1 L51.1,9.4 L56.2,4.0 L61.3,7.3 L66.4,5.0 L71.5,8.2 L76.6,14.2 L81.7,12.6 L86.8,16.2 L91.9,14.2 L97.0,19.6 L102.1,22.6 L107.2,22.1 L112.3,24.2 L117.4,23.0 L122.6,24.9 L127.7,30.6 L132.8,28.5 L137.9,32.2 L143.0,35.1 L148.1,34.7 L153.2,35.6 L158.3,33.7 L163.4,35.0 L168.5,33.6 L173.6,33.5 L178.7,36.0 L183.8,33.2 L188.9,35.2 L194.0,33.7 L199.1,31.3 L204.3,32.7 L209.4,29.2 L214.5,26.0 L219.6,27.2 L224.7,22.7 L229.8,20.1 L234.9,17.3 L240.0,20.1 L240.0,40 Z"/>
+              <polyline class="spark__line" points="0.0,14.1 5.1,16.5 10.2,15.8 15.3,12.4 20.4,12.3 25.5,15.2 30.6,10.4 35.7,9.3 40.9,10.7 46.0,8.1 51.1,9.4 56.2,4.0 61.3,7.3 66.4,5.0 71.5,8.2 76.6,14.2 81.7,12.6 86.8,16.2 91.9,14.2 97.0,19.6 102.1,22.6 107.2,22.1 112.3,24.2 117.4,23.0 122.6,24.9 127.7,30.6 132.8,28.5 137.9,32.2 143.0,35.1 148.1,34.7 153.2,35.6 158.3,33.7 163.4,35.0 168.5,33.6 173.6,33.5 178.7,36.0 183.8,33.2 188.9,35.2 194.0,33.7 199.1,31.3 204.3,32.7 209.4,29.2 214.5,26.0 219.6,27.2 224.7,22.7 229.8,20.1 234.9,17.3 240.0,20.1"/>
+            </svg>
+            
+            <span class="spark__now">217 мс</span>
+          </dd>
+        </div>
+      </dl>
+    </article>
+    
+  </section>
+  
+  <section class="group">
+    <h3 class="group__title">Инфраструктура</h3>
+    
+    <article class="mon mon--up" id="m-db">
+      <div class="mon__head">
+        <div class="mon__name">
+          <h4>PostgreSQL</h4>
+          <code>db.internal.example.com:5432</code>
+        </div>
+        <span class="pill pill--up">Работает</span>
+      </div>
+      
+      <div class="bars" role="img" aria-label="Доступность PostgreSQL по дням за 90 дней, за этот период 99,92%">
+        <i class="bar bar--ok" title="26 июл — 100%, 0 сбоев из 72, в среднем 3 мс"></i><i class="bar bar--ok" title="27 июл — 100%, 0 сбоев из 72, в среднем 3 мс"></i><i class="bar bar--ok" title="28 июл — 100%, 0 сбоев из 72, в среднем 3 мс"></i><i class="bar bar--ok" title="29 июл — 100%, 0 сбоев из 72, в среднем 3 мс"></i><i class="bar bar--ok" title="30 июл — 100%, 0 сбоев из 72, в среднем 3 мс"></i><i class="bar bar--ok" title="31 июл — 100%, 0 сбоев из 72, в среднем 3 мс"></i><i class="bar bar--ok" title="1 авг — 100%, 0 сбоев из 72, в среднем 3 мс"></i><i class="bar bar--ok" title="2 авг — 100%, 0 сбоев из 72, в среднем 3 мс"></i><i class="bar bar--ok" title="3 авг — 100%, 0 сбоев из 72, в среднем 3 мс"></i><i class="bar bar--ok" title="4 авг — 100%, 0 сбоев из 72, в среднем 3 мс"></i><i class="bar bar--minor" title="5 авг — 98,61%, 1 сбой из 72, в среднем 3 мс"></i><i class="bar bar--ok" title="6 авг — 100%, 0 сбоев из 72, в среднем 3 мс"></i><i class="bar bar--ok" title="7 авг — 100%, 0 сбоев из 72, в среднем 3 мс"></i><i class="bar bar--ok" title="8 авг — 100%, 0 сбоев из 72, в среднем 3 мс"></i><i class="bar bar--ok" title="9 авг — 100%, 0 сбоев из 72, в среднем 3 мс"></i><i class="bar bar--ok" title="10 авг — 100%, 0 сбоев из 72, в среднем 3 мс"></i><i class="bar bar--ok" title="11 авг — 100%, 0 сбоев из 72, в среднем 3 мс"></i><i class="bar bar--ok" title="12 авг — 100%, 0 сбоев из 72, в среднем 3 мс"></i><i class="bar bar--ok" title="13 авг — 100%, 0 сбоев из 72, в среднем 3 мс"></i><i class="bar bar--ok" title="14 авг — 100%, 0 сбоев из 72, в среднем 3 мс"></i><i class="bar bar--ok" title="15 авг — 100%, 0 сбоев из 72, в среднем 3 мс"></i><i class="bar bar--ok" title="16 авг — 100%, 0 сбоев из 72, в среднем 3 мс"></i><i class="bar bar--ok" title="17 авг — 100%, 0 сбоев из 72, в среднем 3 мс"></i><i class="bar bar--ok" title="18 авг — 100%, 0 сбоев из 72, в среднем 3 мс"></i><i class="bar bar--ok" title="19 авг — 100%, 0 сбоев из 72, в среднем 3 мс"></i><i class="bar bar--ok" title="20 авг — 100%, 0 сбоев из 72, в среднем 3 мс"></i><i class="bar bar--ok" title="21 авг — 100%, 0 сбоев из 72, в среднем 3 мс"></i><i class="bar bar--ok" title="22 авг — 100%, 0 сбоев из 72, в среднем 3 мс"></i><i class="bar bar--ok" title="23 авг — 100%, 0 сбоев из 72, в среднем 3 мс"></i><i class="bar bar--ok" title="24 авг — 100%, 0 сбоев из 72, в среднем 3 мс"></i><i class="bar bar--ok" title="25 авг — 100%, 0 сбоев из 72, в среднем 3 мс"></i><i class="bar bar--ok" title="26 авг — 100%, 0 сбоев из 72, в среднем 3 мс"></i><i class="bar bar--minor" title="27 авг — 98,61%, 1 сбой из 72, в среднем 3 мс"></i><i class="bar bar--ok" title="28 авг — 100%, 0 сбоев из 72, в среднем 3 мс"></i><i class="bar bar--ok" title="29 авг — 100%, 0 сбоев из 72, в среднем 3 мс"></i><i class="bar bar--ok" title="30 авг — 100%, 0 сбоев из 72, в среднем 3 мс"></i><i class="bar bar--ok" title="31 авг — 100%, 0 сбоев из 72, в среднем 3 мс"></i><i class="bar bar--ok" title="1 сен — 100%, 0 сбоев из 72, в среднем 3 мс"></i><i class="bar bar--ok" title="2 сен — 100%, 0 сбоев из 72, в среднем 3 мс"></i><i class="bar bar--ok" title="3 сен — 100%, 0 сбоев из 72, в среднем 3 мс"></i><i class="bar bar--ok" title="4 сен — 100%, 0 сбоев из 72, в среднем 3 мс"></i><i class="bar bar--ok" title="5 сен — 100%, 0 сбоев из 72, в среднем 3 мс"></i><i class="bar bar--ok" title="6 сен — 100%, 0 сбоев из 72, в среднем 3 мс"></i><i class="bar bar--ok" title="7 сен — 100%, 0 сбоев из 72, в среднем 3 мс"></i><i class="bar bar--ok" title="8 сен — 100%, 0 сбоев из 72, в среднем 3 мс"></i><i class="bar bar--ok" title="9 сен — 100%, 0 сбоев из 72, в среднем 3 мс"></i><i class="bar bar--ok" title="10 сен — 100%, 0 сбоев из 72, в среднем 3 мс"></i><i class="bar bar--ok" title="11 сен — 100%, 0 сбоев из 72, в среднем 3 мс"></i><i class="bar bar--ok" title="12 сен — 100%, 0 сбоев из 72, в среднем 3 мс"></i><i class="bar bar--ok" title="13 сен — 100%, 0 сбоев из 72, в среднем 3 мс"></i><i class="bar bar--ok" title="14 сен — 100%, 0 сбоев из 72, в среднем 3 мс"></i><i class="bar bar--ok" title="15 сен — 100%, 0 сбоев из 72, в среднем 3 мс"></i><i class="bar bar--ok" title="16 сен — 100%, 0 сбоев из 72, в среднем 3 мс"></i><i class="bar bar--ok" title="17 сен — 100%, 0 сбоев из 72, в среднем 3 мс"></i><i class="bar bar--ok" title="18 сен — 100%, 0 сбоев из 72, в среднем 3 мс"></i><i class="bar bar--ok" title="19 сен — 100%, 0 сбоев из 72, в среднем 3 мс"></i><i class="bar bar--ok" title="20 сен — 100%, 0 сбоев из 72, в среднем 3 мс"></i><i class="bar bar--ok" title="21 сен — 100%, 0 сбоев из 72, в среднем 3 мс"></i><i class="bar bar--ok" title="22 сен — 100%, 0 сбоев из 72, в среднем 3 мс"></i><i class="bar bar--ok" title="23 сен — 100%, 0 сбоев из 72, в среднем 3 мс"></i><i class="bar bar--ok" title="24 сен — 100%, 0 сбоев из 72, в среднем 3 мс"></i><i class="bar bar--ok" title="25 сен — 100%, 0 сбоев из 72, в среднем 3 мс"></i><i class="bar bar--minor" title="26 сен — 100%, 0 сбоев из 72, в среднем 4 мс"></i><i class="bar bar--ok" title="27 сен — 100%, 0 сбоев из 72, в среднем 3 мс"></i><i class="bar bar--ok" title="28 сен — 100%, 0 сбоев из 72, в среднем 3 мс"></i><i class="bar bar--ok" title="29 сен — 100%, 0 сбоев из 72, в среднем 3 мс"></i><i class="bar bar--ok" title="30 сен — 100%, 0 сбоев из 72, в среднем 3 мс"></i><i class="bar bar--minor" title="1 окт — 98,61%, 1 сбой из 72, в среднем 3 мс"></i><i class="bar bar--ok" title="2 окт — 100%, 0 сбоев из 72, в среднем 3 мс"></i><i class="bar bar--ok" title="3 окт — 100%, 0 сбоев из 72, в среднем 3 мс"></i><i class="bar bar--ok" title="4 окт — 100%, 0 сбоев из 72, в среднем 3 мс"></i><i class="bar bar--ok" title="5 окт — 100%, 0 сбоев из 72, в среднем 3 мс"></i><i class="bar bar--ok" title="6 окт — 100%, 0 сбоев из 72, в среднем 3 мс"></i><i class="bar bar--ok" title="7 окт — 100%, 0 сбоев из 72, в среднем 3 мс"></i><i class="bar bar--ok" title="8 окт — 100%, 0 сбоев из 72, в среднем 3 мс"></i><i class="bar bar--minor" title="9 окт — 99,48%, 1 сбой из 195, в среднем 3 мс"></i><i class="bar bar--ok" title="10 окт — 100%, 0 сбоев из 288, в среднем 3 мс"></i><i class="bar bar--ok" title="11 окт — 100%, 0 сбоев из 288, в среднем 3 мс"></i><i class="bar bar--minor" title="12 окт — 99,65%, 1 сбой из 288, в среднем 3 мс"></i><i class="bar bar--ok" title="13 окт — 100%, 0 сбоев из 288, в среднем 3 мс"></i><i class="bar bar--ok" title="14 окт — 100%, 0 сбоев из 288, в среднем 3 мс"></i><i class="bar bar--ok" title="15 окт — 100%, 0 сбоев из 288, в среднем 3 мс"></i><i class="bar bar--minor" title="16 окт — 99,65%, 1 сбой из 288, в среднем 3 мс"></i><i class="bar bar--minor" title="17 окт — 99,65%, 1 сбой из 288, в среднем 3 мс"></i><i class="bar bar--ok" title="18 окт — 100%, 0 сбоев из 288, в среднем 3 мс"></i><i class="bar bar--ok" title="19 окт — 100%, 0 сбоев из 288, в среднем 3 мс"></i><i class="bar bar--ok" title="20 окт — 100%, 0 сбоев из 288, в среднем 3 мс"></i><i class="bar bar--ok" title="21 окт — 100%, 0 сбоев из 288, в среднем 3 мс"></i><i class="bar bar--ok" title="22 окт — 100%, 0 сбоев из 288, в среднем 3 мс"></i><i class="bar bar--ok" title="23 окт — 100%, 0 сбоев из 125, в среднем 2 мс"></i>
+      </div>
+      <div class="bars__legend"><span class="from90">26 июл</span><span class="from30">30 дней назад</span><span>сегодня</span></div>
+      <dl class="stats">
+        <div><dt>24 часа</dt><dd>100%</dd></div>
+        <div><dt>30 дней</dt><dd>99,90%</dd></div>
+        <div><dt>90 дней</dt><dd>99,92%</dd></div>
+        <div class="stats__spark">
+          <dt>Отклик за сутки · 2–5 мс</dt>
+          <dd>
+            
+            <svg viewBox="0 0 240 40" preserveAspectRatio="none" aria-hidden="true">
+              <path class="spark__area" d="M0.0,40 L0.0,15.8 L5.1,9.1 L10.2,14.1 L15.3,10.7 L20.4,9.1 L25.5,12.4 L30.6,4.0 L35.7,5.7 L40.9,10.7 L46.0,5.7 L51.1,9.1 L56.2,7.4 L61.3,7.4 L66.4,9.1 L71.5,7.4 L76.6,9.1 L81.7,14.1 L86.8,10.7 L91.9,20.8 L97.0,15.8 L102.1,17.5 L107.2,19.2 L112.3,20.8 L117.4,24.2 L122.6,25.9 L127.7,27.6 L132.8,30.9 L137.9,32.6 L143.0,32.6 L148.1,34.3 L153.2,32.6 L158.3,34.3 L163.4,34.3 L168.5,36.0 L173.6,34.3 L178.7,34.3 L183.8,36.0 L188.9,32.6 L194.0,30.9 L199.1,27.6 L204.3,30.9 L209.4,27.6 L214.5,27.6 L219.6,25.9 L224.7,24.2 L229.8,20.8 L234.9,17.5 L240.0,17.5 L240.0,40 Z"/>
+              <polyline class="spark__line" points="0.0,15.8 5.1,9.1 10.2,14.1 15.3,10.7 20.4,9.1 25.5,12.4 30.6,4.0 35.7,5.7 40.9,10.7 46.0,5.7 51.1,9.1 56.2,7.4 61.3,7.4 66.4,9.1 71.5,7.4 76.6,9.1 81.7,14.1 86.8,10.7 91.9,20.8 97.0,15.8 102.1,17.5 107.2,19.2 112.3,20.8 117.4,24.2 122.6,25.9 127.7,27.6 132.8,30.9 137.9,32.6 143.0,32.6 148.1,34.3 153.2,32.6 158.3,34.3 163.4,34.3 168.5,36.0 173.6,34.3 178.7,34.3 183.8,36.0 188.9,32.6 194.0,30.9 199.1,27.6 204.3,30.9 209.4,27.6 214.5,27.6 219.6,25.9 224.7,24.2 229.8,20.8 234.9,17.5 240.0,17.5"/>
+            </svg>
+            
+            <span class="spark__now">4 мс</span>
+          </dd>
+        </div>
+      </dl>
+    </article>
+    
+    <article class="mon mon--up" id="m-smtp">
+      <div class="mon__head">
+        <div class="mon__name">
+          <h4>Почта (SMTP)</h4>
+          <code>mail.example.com:587</code>
+        </div>
+        <span class="pill pill--up">Работает</span>
+      </div>
+      
+      <div class="bars" role="img" aria-label="Доступность Почта (SMTP) по дням за 90 дней, за этот период 99,88%">
+        <i class="bar bar--ok" title="26 июл — 100%, 0 сбоев из 72, в среднем 33 мс"></i><i class="bar bar--ok" title="27 июл — 100%, 0 сбоев из 72, в среднем 34 мс"></i><i class="bar bar--ok" title="28 июл — 100%, 0 сбоев из 72, в среднем 34 мс"></i><i class="bar bar--ok" title="29 июл — 100%, 0 сбоев из 72, в среднем 34 мс"></i><i class="bar bar--ok" title="30 июл — 100%, 0 сбоев из 72, в среднем 35 мс"></i><i class="bar bar--ok" title="31 июл — 100%, 0 сбоев из 72, в среднем 34 мс"></i><i class="bar bar--ok" title="1 авг — 100%, 0 сбоев из 72, в среднем 34 мс"></i><i class="bar bar--ok" title="2 авг — 100%, 0 сбоев из 72, в среднем 34 мс"></i><i class="bar bar--ok" title="3 авг — 100%, 0 сбоев из 72, в среднем 34 мс"></i><i class="bar bar--ok" title="4 авг — 100%, 0 сбоев из 72, в среднем 34 мс"></i><i class="bar bar--ok" title="5 авг — 100%, 0 сбоев из 72, в среднем 34 мс"></i><i class="bar bar--ok" title="6 авг — 100%, 0 сбоев из 72, в среднем 33 мс"></i><i class="bar bar--ok" title="7 авг — 100%, 0 сбоев из 72, в среднем 33 мс"></i><i class="bar bar--ok" title="8 авг — 100%, 0 сбоев из 72, в среднем 34 мс"></i><i class="bar bar--ok" title="9 авг — 100%, 0 сбоев из 72, в среднем 34 мс"></i><i class="bar bar--ok" title="10 авг — 100%, 0 сбоев из 72, в среднем 34 мс"></i><i class="bar bar--ok" title="11 авг — 100%, 0 сбоев из 72, в среднем 34 мс"></i><i class="bar bar--ok" title="12 авг — 100%, 0 сбоев из 72, в среднем 33 мс"></i><i class="bar bar--ok" title="13 авг — 100%, 0 сбоев из 72, в среднем 33 мс"></i><i class="bar bar--ok" title="14 авг — 100%, 0 сбоев из 72, в среднем 34 мс"></i><i class="bar bar--ok" title="15 авг — 100%, 0 сбоев из 72, в среднем 33 мс"></i><i class="bar bar--ok" title="16 авг — 100%, 0 сбоев из 72, в среднем 34 мс"></i><i class="bar bar--ok" title="17 авг — 100%, 0 сбоев из 72, в среднем 33 мс"></i><i class="bar bar--ok" title="18 авг — 100%, 0 сбоев из 72, в среднем 35 мс"></i><i class="bar bar--ok" title="19 авг — 100%, 0 сбоев из 72, в среднем 34 мс"></i><i class="bar bar--ok" title="20 авг — 100%, 0 сбоев из 72, в среднем 34 мс"></i><i class="bar bar--ok" title="21 авг — 100%, 0 сбоев из 72, в среднем 34 мс"></i><i class="bar bar--ok" title="22 авг — 100%, 0 сбоев из 72, в среднем 34 мс"></i><i class="bar bar--ok" title="23 авг — 100%, 0 сбоев из 72, в среднем 33 мс"></i><i class="bar bar--ok" title="24 авг — 100%, 0 сбоев из 72, в среднем 35 мс"></i><i class="bar bar--ok" title="25 авг — 100%, 0 сбоев из 72, в среднем 35 мс"></i><i class="bar bar--ok" title="26 авг — 100%, 0 сбоев из 72, в среднем 35 мс"></i><i class="bar bar--ok" title="27 авг — 100%, 0 сбоев из 72, в среднем 34 мс"></i><i class="bar bar--ok" title="28 авг — 100%, 0 сбоев из 72, в среднем 33 мс"></i><i class="bar bar--ok" title="29 авг — 100%, 0 сбоев из 72, в среднем 34 мс"></i><i class="bar bar--ok" title="30 авг — 100%, 0 сбоев из 72, в среднем 34 мс"></i><i class="bar bar--ok" title="31 авг — 100%, 0 сбоев из 72, в среднем 35 мс"></i><i class="bar bar--ok" title="1 сен — 100%, 0 сбоев из 72, в среднем 34 мс"></i><i class="bar bar--ok" title="2 сен — 100%, 0 сбоев из 72, в среднем 34 мс"></i><i class="bar bar--ok" title="3 сен — 100%, 0 сбоев из 72, в среднем 34 мс"></i><i class="bar bar--ok" title="4 сен — 100%, 0 сбоев из 72, в среднем 34 мс"></i><i class="bar bar--ok" title="5 сен — 100%, 0 сбоев из 72, в среднем 34 мс"></i><i class="bar bar--ok" title="6 сен — 100%, 0 сбоев из 72, в среднем 34 мс"></i><i class="bar bar--ok" title="7 сен — 100%, 0 сбоев из 72, в среднем 34 мс"></i><i class="bar bar--ok" title="8 сен — 100%, 0 сбоев из 72, в среднем 33 мс"></i><i class="bar bar--minor" title="9 сен — 98,61%, 1 сбой из 72, в среднем 34 мс"></i><i class="bar bar--ok" title="10 сен — 100%, 0 сбоев из 72, в среднем 34 мс"></i><i class="bar bar--ok" title="11 сен — 100%, 0 сбоев из 72, в среднем 34 мс"></i><i class="bar bar--ok" title="12 сен — 100%, 0 сбоев из 72, в среднем 34 мс"></i><i class="bar bar--ok" title="13 сен — 100%, 0 сбоев из 72, в среднем 34 мс"></i><i class="bar bar--ok" title="14 сен — 100%, 0 сбоев из 72, в среднем 34 мс"></i><i class="bar bar--ok" title="15 сен — 100%, 0 сбоев из 72, в среднем 34 мс"></i><i class="bar bar--ok" title="16 сен — 100%, 0 сбоев из 72, в среднем 33 мс"></i><i class="bar bar--ok" title="17 сен — 100%, 0 сбоев из 72, в среднем 34 мс"></i><i class="bar bar--ok" title="18 сен — 100%, 0 сбоев из 72, в среднем 35 мс"></i><i class="bar bar--ok" title="19 сен — 100%, 0 сбоев из 72, в среднем 34 мс"></i><i class="bar bar--ok" title="20 сен — 100%, 0 сбоев из 72, в среднем 34 мс"></i><i class="bar bar--ok" title="21 сен — 100%, 0 сбоев из 72, в среднем 34 мс"></i><i class="bar bar--ok" title="22 сен — 100%, 0 сбоев из 72, в среднем 35 мс"></i><i class="bar bar--ok" title="23 сен — 100%, 0 сбоев из 72, в среднем 34 мс"></i><i class="bar bar--ok" title="24 сен — 100%, 0 сбоев из 72, в среднем 35 мс"></i><i class="bar bar--ok" title="25 сен — 100%, 0 сбоев из 72, в среднем 34 мс"></i><i class="bar bar--ok" title="26 сен — 100%, 0 сбоев из 72, в среднем 34 мс"></i><i class="bar bar--ok" title="27 сен — 100%, 0 сбоев из 72, в среднем 33 мс"></i><i class="bar bar--ok" title="28 сен — 100%, 0 сбоев из 72, в среднем 34 мс"></i><i class="bar bar--ok" title="29 сен — 100%, 0 сбоев из 72, в среднем 34 мс"></i><i class="bar bar--ok" title="30 сен — 100%, 0 сбоев из 72, в среднем 34 мс"></i><i class="bar bar--ok" title="1 окт — 100%, 0 сбоев из 72, в среднем 34 мс"></i><i class="bar bar--minor" title="2 окт — 98,61%, 1 сбой из 72, в среднем 34 мс"></i><i class="bar bar--ok" title="3 окт — 100%, 0 сбоев из 72, в среднем 34 мс"></i><i class="bar bar--ok" title="4 окт — 100%, 0 сбоев из 72, в среднем 35 мс"></i><i class="bar bar--ok" title="5 окт — 100%, 0 сбоев из 72, в среднем 34 мс"></i><i class="bar bar--ok" title="6 окт — 100%, 0 сбоев из 72, в среднем 34 мс"></i><i class="bar bar--ok" title="7 окт — 100%, 0 сбоев из 72, в среднем 34 мс"></i><i class="bar bar--ok" title="8 окт — 100%, 0 сбоев из 72, в среднем 34 мс"></i><i class="bar bar--ok" title="9 окт — 100%, 0 сбоев из 195, в среднем 37 мс"></i><i class="bar bar--ok" title="10 окт — 100%, 0 сбоев из 288, в среднем 34 мс"></i><i class="bar bar--ok" title="11 окт — 100%, 0 сбоев из 288, в среднем 34 мс"></i><i class="bar bar--minor" title="12 окт — 99,65%, 1 сбой из 288, в среднем 34 мс"></i><i class="bar bar--ok" title="13 окт — 100%, 0 сбоев из 288, в среднем 34 мс"></i><i class="bar bar--ok" title="14 окт — 100%, 0 сбоев из 288, в среднем 34 мс"></i><i class="bar bar--ok" title="15 окт — 100%, 0 сбоев из 288, в среднем 34 мс"></i><i class="bar bar--minor" title="16 окт — 99,65%, 1 сбой из 288, в среднем 34 мс"></i><i class="bar bar--ok" title="17 окт — 100%, 0 сбоев из 288, в среднем 34 мс"></i><i class="bar bar--ok" title="18 окт — 100%, 0 сбоев из 288, в среднем 34 мс"></i><i class="bar bar--ok" title="19 окт — 100%, 0 сбоев из 288, в среднем 34 мс"></i><i class="bar bar--warn" title="20 окт — 97,56%, 7 сбоев из 288, в среднем 207 мс"></i><i class="bar bar--ok" title="21 окт — 100%, 0 сбоев из 288, в среднем 34 мс"></i><i class="bar bar--ok" title="22 окт — 100%, 0 сбоев из 288, в среднем 34 мс"></i><i class="bar bar--ok" title="23 окт — 100%, 0 сбоев из 125, в среднем 27 мс"></i>
+      </div>
+      <div class="bars__legend"><span class="from90">26 июл</span><span class="from30">30 дней назад</span><span>сегодня</span></div>
+      <dl class="stats">
+        <div><dt>24 часа</dt><dd>100%</dd></div>
+        <div><dt>30 дней</dt><dd>99,80%</dd></div>
+        <div><dt>90 дней</dt><dd>99,88%</dd></div>
+        <div class="stats__spark">
+          <dt>Отклик за сутки · 21–50 мс</dt>
+          <dd>
+            
+            <svg viewBox="0 0 240 40" preserveAspectRatio="none" aria-hidden="true">
+              <path class="spark__area" d="M0.0,40 L0.0,17.3 L5.1,13.9 L10.2,11.3 L15.3,13.0 L20.4,13.5 L25.5,6.6 L30.6,8.6 L35.7,8.0 L40.9,4.0 L46.0,10.4 L51.1,10.6 L56.2,7.5 L61.3,6.7 L66.4,14.6 L71.5,10.9 L76.6,11.5 L81.7,13.5 L86.8,18.6 L91.9,16.6 L97.0,15.2 L102.1,21.9 L107.2,21.9 L112.3,23.0 L117.4,24.8 L122.6,26.9 L127.7,28.1 L132.8,32.3 L137.9,31.6 L143.0,31.2 L148.1,34.9 L153.2,35.3 L158.3,32.9 L163.4,34.5 L168.5,32.9 L173.6,36.0 L178.7,33.8 L183.8,34.7 L188.9,30.7 L194.0,30.7 L199.1,31.4 L204.3,24.8 L209.4,23.6 L214.5,23.9 L219.6,26.7 L224.7,22.8 L229.8,20.6 L234.9,20.5 L240.0,13.7 L240.0,40 Z"/>
+              <polyline class="spark__line" points="0.0,17.3 5.1,13.9 10.2,11.3 15.3,13.0 20.4,13.5 25.5,6.6 30.6,8.6 35.7,8.0 40.9,4.0 46.0,10.4 51.1,10.6 56.2,7.5 61.3,6.7 66.4,14.6 71.5,10.9 76.6,11.5 81.7,13.5 86.8,18.6 91.9,16.6 97.0,15.2 102.1,21.9 107.2,21.9 112.3,23.0 117.4,24.8 122.6,26.9 127.7,28.1 132.8,32.3 137.9,31.6 143.0,31.2 148.1,34.9 153.2,35.3 158.3,32.9 163.4,34.5 168.5,32.9 173.6,36.0 178.7,33.8 183.8,34.7 188.9,30.7 194.0,30.7 199.1,31.4 204.3,24.8 209.4,23.6 214.5,23.9 219.6,26.7 224.7,22.8 229.8,20.6 234.9,20.5 240.0,13.7"/>
+            </svg>
+            
+            <span class="spark__now">40 мс</span>
+          </dd>
+        </div>
+      </dl>
+    </article>
+    
+  </section>
+  
+
+  <section class="incidents">
+    <h3 class="group__title">Инциденты за 30 дней</h3>
+    
+    <ol class="log">
+      
+      <li class="log__item log__item--open">
+        <time>23 окт, 09:45</time>
+        <div>
+          <p><b>Личный кабинет</b> — нет ответа за 10 с</p>
+          <p class="muted">продолжается 35 мин</p>
+        </div>
+      </li>
+      
+      <li class="log__item">
+        <time>20 окт, 03:20</time>
+        <div>
+          <p><b>Почта (SMTP)</b> — соединение отклонено</p>
+          <p class="muted">простой 30 мин</p>
+        </div>
+      </li>
+      
+      <li class="log__item">
+        <time>11 окт, 13:20</time>
+        <div>
+          <p><b>Публичный API</b> — код ответа 502, ожидался 200–206</p>
+          <p class="muted">простой 1 ч 40 мин</p>
+        </div>
+      </li>
+      
+    </ol>
+    
+  </section>
+
+  <footer class="foot">
+    <span>Снимок страницы на 23 окт, 10:20.</span>
+    <a href="https://github.com/whysafe/dozor">Работает на dozor</a>
+  </footer>
+</div>
+</body>
+</html>

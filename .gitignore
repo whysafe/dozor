@@ -1,0 +1,10 @@
+/dozor
+/dozor.exe
+/dist/
+*.db
+*.db-wal
+*.db-shm
+/dozor.yaml
+.env
+.idea/
+.vscode/

@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: gofmt
+        run: test -z "$(gofmt -l .)" || (gofmt -l . && exit 1)
+      - run: go vet ./...
+      - run: go test -race -count=1 ./...
+      - name: Example config is valid
+        run: DOZOR_TELEGRAM_CHAT=1 go run ./cmd/dozor validate -config dozor.example.yaml
+      - name: Demo page renders
+        run: go run ./cmd/dozor demo -render /tmp/status.html && grep -q 'Частичный сбой' /tmp/status.html
+
+  docker:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t dozor .
+      - name: Container starts and answers
+        run: |
+          mkdir data
+          printf 'monitors:\n  - {id: self, type: tcp, address: "127.0.0.1:8080"}\n' > data/dozor.yaml
+          chmod -R 777 data
+          docker run -d --name dozor -p 8080:8080 -v "$PWD/data:/data" dozor
+          for i in $(seq 1 20); do curl -fs localhost:8080/healthz && break; sleep 1; done
+          sleep 2
+          curl -fs localhost:8080/api/status | tee /dev/stderr | grep -q '"state": "up"'
+          docker logs dozor

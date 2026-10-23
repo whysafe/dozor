@@ -1,0 +1,41 @@
+# Пример конфигурации dozor. Скопируйте в dozor.yaml и поправьте под себя.
+# Ссылки вида ${VAR} подставляются из переменных окружения.
+
+title: Статус сервисов
+timezone: Europe/Moscow     # где начинаются сутки для полосок за 90 дней
+interval: 1m                # как часто проверять (можно переопределить у монитора)
+timeout: 10s
+failure_threshold: 3        # столько сбоев подряд открывают инцидент
+recovery_threshold: 2       # столько успешных проверок подряд его закрывают
+retention_days: 30          # сырые результаты; дневная статистика хранится всегда
+
+notify:
+  telegram:
+    chat_id: "${DOZOR_TELEGRAM_CHAT}"   # токен бота — в переменной DOZOR_TELEGRAM_TOKEN
+  # webhook:
+  #   url: "${DOZOR_WEBHOOK_URL}"
+
+monitors:
+  - id: site
+    name: Сайт
+    group: Для клиентов
+    type: http
+    url: https://example.com
+    keyword: Example Domain   # страница должна содержать этот текст
+    slow_ms: 1500             # дольше — «есть проблемы», но не простой
+    cert_warn_days: 14
+
+  - id: api
+    name: API
+    group: Для клиентов
+    type: http
+    url: https://example.com/api/health
+    expect_status: [200, 204]
+    interval: 30s
+
+  - id: ssh
+    name: SSH сервера
+    group: Инфраструктура
+    type: tcp
+    address: example.com:22
+    timeout: 5s

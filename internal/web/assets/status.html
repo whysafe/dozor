@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+{{if .Refresh}}<meta http-equiv="refresh" content="{{.Refresh}}">{{end}}
+<title>{{.Title}} · {{.Overall.Text}}</title>
+<meta name="description" content="Доступность сервисов за 90 дней и история инцидентов.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%231f1d1a'/%3E%3Ccircle cx='16' cy='16' r='6' fill='%23e8c547'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>{{.CSS}}</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <span class="eye" aria-hidden="true"><span></span></span>
+      <div>
+        <p class="kicker">дозор · мониторинг</p>
+        <h1>{{.Title}}</h1>
+      </div>
+    </div>
+    <p class="stamp">Обновлено <br><b>{{.Generated}}</b></p>
+  </header>
+
+  <section class="banner banner--{{.Overall.State}}" aria-live="polite">
+    <span class="pulse" aria-hidden="true"></span>
+    <div>
+      <h2>{{.Overall.Text}}</h2>
+      <p>{{.Overall.Note}}</p>
+    </div>
+  </section>
+
+  {{range .Groups}}
+  <section class="group">
+    <h3 class="group__title">{{.Name}}</h3>
+    {{range .Monitors}}
+    <article class="mon mon--{{.State}}" id="m-{{.ID}}">
+      <div class="mon__head">
+        <div class="mon__name">
+          <h4>{{.Name}}</h4>
+          <code>{{.Target}}</code>
+        </div>
+        <span class="pill pill--{{.State}}">{{.StateText}}</span>
+      </div>
+      {{if .Message}}<p class="mon__msg">{{.Message}}</p>{{end}}
+      <div class="bars" role="img" aria-label="Доступность {{.Name}} по дням за 90 дней, за этот период {{.Uptime90}}">
+        {{range .Days}}<i class="bar bar--{{.Class}}" title="{{.Title}}"></i>{{end}}
+      </div>
+      <div class="bars__legend"><span class="from90">{{$.FirstDay}}</span><span class="from30">30 дней назад</span><span>сегодня</span></div>
+      <dl class="stats">
+        <div><dt>24 часа</dt><dd>{{.Uptime24}}</dd></div>
+        <div><dt>30 дней</dt><dd>{{.Uptime30}}</dd></div>
+        <div><dt>90 дней</dt><dd>{{.Uptime90}}</dd></div>
+        <div class="stats__spark">
+          <dt>Отклик за сутки{{if .SparkRange}} · {{.SparkRange}}{{end}}</dt>
+          <dd>
+            {{if .Spark}}
+            <svg viewBox="0 0 240 40" preserveAspectRatio="none" aria-hidden="true">
+              <path class="spark__area" d="{{.SparkArea}}"/>
+              <polyline class="spark__line" points="{{.Spark}}"/>
+            </svg>
+            {{else}}<span class="muted">нет данных</span>{{end}}
+            {{if .Latency}}<span class="spark__now">{{.Latency}}</span>{{end}}
+          </dd>
+        </div>
+      </dl>
+    </article>
+    {{end}}
+  </section>
+  {{end}}
+
+  <section class="incidents">
+    <h3 class="group__title">Инциденты за 30 дней</h3>
+    {{if .Incidents}}
+    <ol class="log">
+      {{range .Incidents}}
+      <li class="log__item{{if .Open}} log__item--open{{end}}">
+        <time>{{.Started}}</time>
+        <div>
+          <p><b>{{.Monitor}}</b> — {{.Cause}}</p>
+          <p class="muted">{{if .Open}}продолжается {{.Duration}}{{else}}простой {{.Duration}}{{end}}</p>
+        </div>
+      </li>
+      {{end}}
+    </ol>
+    {{else}}
+    <p class="empty">Ни одного инцидента. Тихо, как на хорошем дежурстве.</p>
+    {{end}}
+  </section>
+
+  <footer class="foot">
+    <span>{{if .Refresh}}Страница обновляется сама каждую минуту.{{else}}Снимок страницы на {{.Generated}}.{{end}}</span>
+    <a href="https://github.com/whysafe/dozor">Работает на dozor</a>
+  </footer>
+</div>
+</body>
+</html>
